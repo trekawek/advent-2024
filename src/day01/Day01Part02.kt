@@ -1,3 +1,5 @@
+package day01
+
 fun main() {
     println(
         generateSequence(::readlnOrNull).toList().map(::parseLine).unzip().run {

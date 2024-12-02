@@ -1,3 +1,5 @@
+package day01
+
 import kotlin.math.absoluteValue
 import kotlin.text.toInt
 
