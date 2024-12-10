@@ -10,7 +10,7 @@ fun readField() = generateSequence(::readlnOrNull).map { row -> row.toList().map
 fun findTrailheads(field: List<List<Int>>) =
     field.flatMapIndexed { i, row -> row.mapIndexed { j, e -> if (e == 0) Pair(i, j) else null }.filterNotNull() }
 
-private fun getReachable9s(field: List<List<Int>>, position: Position): List<Pair<Int, Int>> {
+fun getReachable9s(field: List<List<Int>>, position: Position): List<Pair<Int, Int>> {
     val current = field[position.first][position.second]
     if (current == 9) {
         return listOf(position)
