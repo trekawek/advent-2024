@@ -1,11 +1,10 @@
 package day11
 
-import kotlinx.coroutines.*
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
 
-fun main() = runBlocking {
+fun main() {
     println(readInput().repeatFlatMap(25, ::eval).count())
 }
 

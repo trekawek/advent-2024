@@ -1,8 +1,6 @@
 package day11
 
-import kotlinx.coroutines.runBlocking
-
-fun main() = runBlocking {
+fun main() {
     println(readInput().sumOf { getStonesCount(it, 75) })
 }
 
