@@ -12,9 +12,17 @@ class Machine(var a: Long, private var b: Long, private var c: Long, val program
     }
 
     fun run(): List<Long> {
+        println(this)
         val result = mutableListOf<Long>()
         while (pc < program.size) {
-            step()?.let(result::add)
+            if (pc == 0) {
+                println("\na=${a.toString(2)}\nb=${b.toString(2)}")
+            }
+            val o = step()
+            if (o != null) {
+                result += o
+                println("o=${o.toString(2)}")
+            }
         }
         return result
     }
