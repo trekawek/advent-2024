@@ -3,7 +3,6 @@ package day17
 import java.math.BigInteger
 
 fun main() {
-    println(findCode(listOf(3, 1, 4, 3, 1, 7, 1, 6, 3)))
     println(findCode(listOf(2, 4, 1, 2, 7, 5, 4, 5, 1, 3, 5, 5, 0, 3, 3, 0)))
 }
 
@@ -24,14 +23,14 @@ private fun findCode(digits: List<Int>, i: Int = 0, partialCode: BigInteger = Bi
         } else {
             listOf()
         }
-    }.toSet().sorted()
+    }.toSet().filter { program(it) == digits }.sorted()
 }
 
 // partialCode:    SSSS SSS UUU
 // candidate:       TTT TTT
 //                === ===
 private fun fitsIntoPartial(partialCode: BigInteger, candidate: Int, i: Int): Boolean {
-    return (partialCode shr (i * 3)) == (candidate and 0b111_111).toBigInteger()
+    return (partialCode shr (i * 3)).and(0b111_111) == (candidate and 0b111_111).toBigInteger()
 }
 
 // partialCode:  T SSS SSS UUU
