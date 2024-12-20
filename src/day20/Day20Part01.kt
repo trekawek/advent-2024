@@ -14,22 +14,24 @@ fun main() {
 fun part01Bfs(field: Field<Char>, start: Position) {
     val noCheat = findScoreBfs(field, start, false).first().score
     val cheatsToPico =
-        findScoreBfs(field, start, true).groupBy { it.score }.mapKeys { noCheat - it.key }
+        findScoreBfs(field, start, true, noCheat - 100).groupBy { it.score }.mapKeys { noCheat - it.key }
             .filterKeys { it > 0 }.mapValues { it.value.distinctBy { result -> result.cheats.start }.count() }
             .map { Pair(it.value, it.key) }.sortedBy { it.second }
     println(cheatsToPico.joinToString("\n"))
     println(cheatsToPico.filter { it.second >= 100 }.sumOf { it.first })
 }
 
-fun findScoreBfs(field: Field<Char>, start: Position, cheatsEnabled: Boolean): List<Result> {
+fun findScoreBfs(field: Field<Char>, start: Position, cheatsEnabled: Boolean, maxScore: Int = Int.MAX_VALUE): List<Result> {
     val queue: Queue<Entry> = LinkedList()
     queue.add(Entry(start, CheatState(cheatsEnabled), 0))
 
     val scores = Field.newScoreField(field.width, field.height)
-
     val results = mutableListOf<Result>()
     while (queue.isNotEmpty()) {
         val (p, cheatState, score) = queue.remove()
+        if (score > maxScore) {
+            continue
+        }
 
         val updatedCheatState = if (cheatState.started) {
             cheatState.decreaseRemaining(p)
