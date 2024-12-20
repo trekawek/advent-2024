@@ -1,77 +1,82 @@
 package day20
 
+import java.util.LinkedList
+import java.util.Queue
+
 private const val MAX_CHEATS = 2
 
 fun main() {
     val field = Field.readField()
     val start = field.find('S')
-    val noCheat = findScore(field, null, start, CheatState(false)).first().score
-    val scores = Field.newScoreField(field.width, field.height)
+    part01Bfs(field, start)
+}
+
+fun part01Bfs(field: Field<Char>, start: Position) {
+    val noCheat = findScoreBfs(field, start, false).first().score
     val cheatsToPico =
-        findScore(field, scores, start, CheatState(true), 0).groupBy { it.score }.mapKeys { noCheat - it.key }
+        findScoreBfs(field, start, true).groupBy { it.score }.mapKeys { noCheat - it.key }
             .filterKeys { it > 0 }.mapValues { it.value.distinctBy { result -> result.cheats.start }.count() }
             .map { Pair(it.value, it.key) }.sortedBy { it.second }
     println(cheatsToPico.joinToString("\n"))
     println(cheatsToPico.filter { it.second >= 100 }.sumOf { it.first })
 }
 
-fun findScore(
-    field: Field<Char>,
-    scores: Field<MutableMap<CheatState, Int>>?,
-    p: Position,
-    cheatState: CheatState,
-    score: Int = 0,
-): List<Result> {
-    val updatedCheatState = if (cheatState.started) {
-        cheatState.decreaseRemaining(p)
-    } else {
-        cheatState
-    }
+fun findScoreBfs(field: Field<Char>, start: Position, cheatsEnabled: Boolean): List<Result> {
+    val queue: Queue<Entry> = LinkedList()
+    queue.add(Entry(start, CheatState(cheatsEnabled), 0))
 
-    if (scores != null) {
+    val scores = Field.newScoreField(field.width, field.height)
+
+    val results = mutableListOf<Result>()
+    while (queue.isNotEmpty()) {
+        val (p, cheatState, score) = queue.remove()
+
+        val updatedCheatState = if (cheatState.started) {
+            cheatState.decreaseRemaining(p)
+        } else {
+            cheatState
+        }
+
         val cheatToScore = scores[p]
         val memoized = cheatToScore[updatedCheatState] ?: Int.MAX_VALUE
-        if (memoized < score) {
-            return listOf()
+        if (memoized <= score) {
+            continue
         } else {
             cheatToScore[updatedCheatState] = score
         }
+
+        if (field[p] == 'E') {
+            if (updatedCheatState.started && updatedCheatState.available) {
+                continue
+            }
+            results += Result(score, updatedCheatState)
+            continue
+        }
+
+        for (d in Direction.entries) {
+            val q = p + d
+            if (!field.isValidPosition(q)) {
+                continue
+            }
+
+            val w = field[q]
+            if (w == '#' && !updatedCheatState.available) {
+                continue
+            }
+
+            val startedCheatState = if (w == '#' && !updatedCheatState.started) {
+                updatedCheatState.start(p)
+            } else {
+                updatedCheatState
+            }
+
+            queue += Entry(q, startedCheatState, score + 1)
+        }
     }
-
-    if (field[p] == 'E') {
-        if (updatedCheatState.started && updatedCheatState.available) {
-            return listOf()
-        }
-        return listOf(Result(score, updatedCheatState))
-    }
-    return Direction.entries.flatMap { d ->
-        val v = field[p]
-
-        val q = p + d
-        if (!field.isValidPosition(q)) {
-            return@flatMap listOf()
-        }
-
-        val w = field[q]
-        if (w !in setOf('E', '.', '#')) {
-            return@flatMap listOf()
-        }
-        if (w == '#' && !updatedCheatState.available) {
-            return@flatMap listOf()
-        }
-
-        val startedCheatState = if (w == '#' && !updatedCheatState.started) {
-            updatedCheatState.start(p)
-        } else {
-            updatedCheatState
-        }
-
-        field[p] = 'O'
-        val newScore = findScore(field, scores, q, startedCheatState, score + 1)
-        field[p] = v
-        newScore
-    }
+    return results
 }
+
+data class Entry(val position: Position, val cheats: CheatState, val score: Int)
 
 data class Result(val score: Int, val cheats: CheatState)
 
