@@ -14,28 +14,27 @@ fun main() {
 fun countCheats(field: Field<Char>, start: Position, end: Position, maxCheatLength: Int, minSave: Int): Int {
     val baseScore = findScoreBfs(field, start, end, null)
     val maxScore = baseScore - minSave
-    val results = mutableMapOf<Int, MutableList<Pair<Position, Position>>>()
+    val results = mutableMapOf<Int, MutableList<Cheat>>()
     for (i in (0..<field.width)) {
         for (j in (0..<field.height)) {
-            val p = Pair(i, j)
+            val p = Position(i, j)
             if (field[p] == '#') {
                 continue
             }
+            println(p)
             for (k in (0..<field.width)) {
                 for (l in (0..<field.height)) {
-                    val q = Pair(k, l)
+                    val q = Position(k, l)
                     if (field[q] == '#') {
                         continue
                     }
                     if (p == q) {
                         continue
                     }
-                    val cheat = Pair(p, q)
-                    val dist = dist(cheat)
-                    if (dist !in (2..maxCheatLength)) {
+                    val cheat = Cheat(p, q)
+                    if (cheat.dist() !in (2..maxCheatLength)) {
                         continue
                     }
-                    println(cheat)
                     val score = findScoreBfs(field, start, end, cheat, maxScore)
                     if (score <= maxScore) {
                         val gain = baseScore - score
@@ -54,16 +53,12 @@ fun countCheats(field: Field<Char>, start: Position, end: Position, maxCheatLeng
 }
 
 fun findScoreBfs(
-    field: Field<Char>,
-    start: Position,
-    end: Position,
-    cheat: Pair<Position, Position>?,
-    maxScore: Int = Int.MAX_VALUE
+    field: Field<Char>, start: Position, end: Position, cheat: Cheat?, maxScore: Int = Int.MAX_VALUE
 ): Int {
     val queue: Queue<Entry> = LinkedList()
     queue.add(Entry(start, 0))
 
-    val dist = cheat?.let(::dist) ?: Int.MAX_VALUE
+    val cheatDist = cheat?.dist() ?: Int.MAX_VALUE
     val scores = Field.newScoreField(field.width, field.height)
     while (queue.isNotEmpty()) {
         val (p, score) = queue.remove()
@@ -78,11 +73,10 @@ fun findScoreBfs(
         if (p == end) {
             continue
         }
-        if (cheat != null) {
-            if (p == cheat.first) {
-                queue += Entry(cheat.second, score + dist)
-                continue
-            }
+        if (p == cheat?.from) {
+            queue += Entry(cheat.to, score + cheatDist)
+            //addScoresToPaths(scores, cheat, score)
+            continue
         }
         for (d in Direction.entries) {
             val q = p + d
@@ -99,8 +93,22 @@ fun findScoreBfs(
     return scores[end]
 }
 
-data class Entry(val position: Position, val score: Int)
-
-fun dist(pair: Pair<Position, Position>): Int {
-    return abs(pair.first.first - pair.second.first) + abs(pair.first.second - pair.second.second)
+fun addScoresToPaths(scores: Field<Int>, cheat: Cheat, score: Int) {
+    val (from, to) = cheat
+    val distI = to.i - from.i
+    val distJ = to.j - from.j
+    val iSeq = if (distI > 0) (from.i..to.i) else (from.i downTo to.i)
+    val jSeq = if (distJ > 0) (from.j..to.j) else (from.j downTo to.j)
+    for (i in iSeq) {
+        val step = abs(i - cheat.from.i)
+        scores[Position(i, from.j)] = score + step
+        scores[Position(i, to.j)] = score + step + abs(distJ)
+    }
+    for (j in jSeq) {
+        val step = abs(j - cheat.from.j)
+        scores[Position(from.i, j)] = score + step
+        scores[Position(to.i, j)] = score + step + abs(distI)
+    }
 }
+
+data class Entry(val position: Position, val score: Int)

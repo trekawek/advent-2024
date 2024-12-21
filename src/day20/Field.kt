@@ -8,14 +8,14 @@ class Field<T>(private val values: Array<Array<T>>) {
     val height: Int
         get() = values.size
 
-    operator fun get(p: Position): T = values[p.second][p.first]
+    operator fun get(p: Position): T = values[p.j][p.i]
 
     operator fun set(p: Position, c: T) {
-        values[p.second][p.first] = c
+        values[p.j][p.i] = c
     }
 
     fun isValidPosition(position: Position) =
-        (position.first >= 0 && position.second >= 0 && position.first < width && position.second < height)
+        (position.i >= 0 && position.j >= 0 && position.i < width && position.j < height)
 
     fun <S> map(transform: (Position, T) -> S): List<S> = values.flatMapIndexed { j, row ->
         row.mapIndexed { i, c -> transform(Position(i, j), c) }
@@ -51,7 +51,7 @@ class Field<T>(private val values: Array<Array<T>>) {
             val builder = StringBuilder()
             for (j in values.indices) {
                 for (i in values[j].indices) {
-                    val p = Pair(i, j)
+                    val p = Position(i, j)
                     builder.append(marks[p] ?: this[p])
                 }
                 builder.append("\n")

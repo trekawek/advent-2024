@@ -1,8 +1,7 @@
 package day20
 
-typealias Position = Pair<Int, Int>
-
-internal operator fun Position.plus(d: Direction): Position {
-    return Pair(this.first + d.offset.first, this.second + d.offset.second)
+data class Position(val i: Int, val j: Int) {
+    operator fun plus(d: Direction): Position {
+        return Position(i + d.offset.first, j + d.offset.second)
+    }
 }
-
