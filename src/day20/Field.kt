@@ -34,10 +34,10 @@ class Field<T>(private val values: Array<Array<T>>) {
             generateSequence(::readlnOrNull).takeWhile { it.isNotBlank() }.map { it.toList().toTypedArray() }.toList()
                 .toTypedArray().let { Field(it) }
 
-        fun newScoreField(width: Int, height: Int): Field<MutableMap<CheatState, Int>> {
+        fun newScoreField(width: Int, height: Int): Field<Int> {
             val arr = (0..<height).map {
                 (0..<width).map {
-                    mutableMapOf<CheatState, Int>()
+                    Int.MAX_VALUE
                 }.toTypedArray()
             }.toTypedArray()
             return Field(arr)
@@ -47,10 +47,13 @@ class Field<T>(private val values: Array<Array<T>>) {
             return Field(values.map { it.clone() }.toTypedArray())
         }
 
-        fun Field<Char>.charFieldToString(): String {
+        fun Field<Char>.charFieldToString(marks: Map<Position, Char> = mapOf()): String {
             val builder = StringBuilder()
-            for (row in values) {
-                builder.append(row.joinToString(""))
+            for (j in values.indices) {
+                for (i in values[j].indices) {
+                    val p = Pair(i, j)
+                    builder.append(marks[p] ?: this[p])
+                }
                 builder.append("\n")
             }
             return builder.toString()
