@@ -16,19 +16,25 @@ class Keypad private constructor(
         row.mapIndexed { i, b -> if (b == button) Position(i, j) else null }
     }.filterNotNull().first()
 
-    override fun request(buttonList: List<Char>, position: Position?): Pair<List<Char>, Position> {
-        val cacheKey = Pair(buttonList, position)
+    val cache: MutableMap<Triple<Position, Position, Position?>, Pair<Long, Position>> = mutableMapOf()
+
+    override fun request(buttonList: List<Char>, position: Position?): Pair<Long, Position> {
         var p = position ?: find('A')
         var r: Position? = null
-        val result = Pair(buttonList.flatMap { button ->
+        val result = Pair(buttonList.sumOf { button ->
             val q = find(button)
-            val paths = findMinPaths(findAllPaths(p, q))
-            val (path, newR) = paths.map { path ->
-                delegate.request(path.map { it.toChar() } + 'A', r)
-            }.minByOrNull { it.first.size }!!
+            val cacheKey = Triple(p, q, r)
+            val (cost, newR) = if (cache.contains(cacheKey)) {
+                cache[cacheKey]!!
+            } else {
+                val paths = findMinPaths(findAllPaths(p, q))
+                paths.map { path ->
+                    delegate.request(path.map { it.toChar() } + 'A', r)
+                }.minByOrNull { it.first }!!.also { cache[cacheKey] = it }
+            }
             r = newR
             p = q
-            path
+            cost
         }, p)
         return result
     }
@@ -42,17 +48,21 @@ class Keypad private constructor(
         p: Position,
         end: Position,
         path: Path = listOf(),
-        visited: List<Position> = listOf(p)
+        scores: MutableMap<Position, Int> = mutableMapOf()
     ): List<Path> {
+        if ((scores[p] ?: Int.MAX_VALUE) < path.size) {
+            return listOf()
+        }
+        scores[p] = path.size
         if (p == end) {
             return listOf(path)
         }
         return Direction.entries.flatMap { d ->
             val q = p + d
-            if (!isValidPosition(q) || q in visited || buttons[q.j][q.i] == '-') {
+            if (!isValidPosition(q) || buttons[q.j][q.i] == '-') {
                 listOf()
             } else {
-                findAllPaths(q, end, path + d, visited + q)
+                findAllPaths(q, end, path + d, scores)
             }
         }
     }
