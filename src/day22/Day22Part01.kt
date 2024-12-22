@@ -1,17 +1,11 @@
 package day22
 
 fun main() {
-    println(generateSequence(::readlnOrNull).map(String::toLong).map { hashRounds(it, 2000) }.sum())
+    println(generateSequence(::readlnOrNull).map(String::toLong).map { generateSecrets(it).drop(1).take(2000).last() }
+        .sum())
 }
 
-
-fun hashRounds(i: Long, rounds: Int): Long {
-    var result = i
-    for (i in (0..<rounds)) {
-        result = hash(result)
-    }
-    return result
-}
+fun generateSecrets(i: Long) = generateSequence(i, ::hash)
 
 fun hash(i: Long): Long {
     var result = i
