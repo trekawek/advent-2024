@@ -1,7 +1,5 @@
 package day20
 
-import java.util.EnumSet
-
 class Field<T>(private val values: Array<Array<T>>) {
     val width: Int
         get() = values[0].size
@@ -41,22 +39,6 @@ class Field<T>(private val values: Array<Array<T>>) {
                 }.toTypedArray()
             }.toTypedArray()
             return Field(arr)
-        }
-
-        fun Field<Char>.clone(): Field<Char> {
-            return Field(values.map { it.clone() }.toTypedArray())
-        }
-
-        fun Field<Char>.charFieldToString(marks: Map<Position, Char> = mapOf()): String {
-            val builder = StringBuilder()
-            for (j in values.indices) {
-                for (i in values[j].indices) {
-                    val p = Position(i, j)
-                    builder.append(marks[p] ?: this[p])
-                }
-                builder.append("\n")
-            }
-            return builder.toString()
         }
     }
 }
