@@ -1,15 +1,21 @@
 package day02
 
 fun main() {
-    println(
-        generateSequence(::readlnOrNull).toList().map(::parseLine).map {
+  println(
+      generateSequence(::readlnOrNull)
+          .toList()
+          .map(::parseLine)
+          .map {
             if (it.last() < it.first()) {
-                it.reversed()
+              it.reversed()
             } else {
-                it
+              it
             }
-        }.count(::isSafe)
-    )
+          }
+          .count(::isSafe))
 }
+
 internal fun parseLine(line: String): List<Int> = line.split(' ').map { it.toInt() }
-internal fun isSafe(line: List<Int>) = line.zipWithNext().map { it.second - it.first }.all { it in 1..3 }
+
+internal fun isSafe(line: List<Int>) =
+    line.zipWithNext().map { it.second - it.first }.all { it in 1..3 }

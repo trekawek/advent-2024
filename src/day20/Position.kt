@@ -1,7 +1,7 @@
 package day20
 
 data class Position(val i: Int, val j: Int) {
-    operator fun plus(d: Direction): Position {
-        return Position(i + d.offset.first, j + d.offset.second)
-    }
+  operator fun plus(d: Direction): Position {
+    return Position(i + d.offset.first, j + d.offset.second)
+  }
 }

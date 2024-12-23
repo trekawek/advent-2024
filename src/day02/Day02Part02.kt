@@ -1,21 +1,25 @@
 package day02
 
 fun main() {
-    println(
-        generateSequence(::readlnOrNull).toList().map(::parseLine).map {
+  println(
+      generateSequence(::readlnOrNull)
+          .toList()
+          .map(::parseLine)
+          .map {
             if (it.last() < it.first()) {
-                it.reversed()
+              it.reversed()
             } else {
-                it
+              it
             }
-        }.count(::isSafeWithElementRemoved)
-    )
+          }
+          .count(::isSafeWithElementRemoved))
 }
 
-private fun isSafeWithElementRemoved(line: List<Int>) = if (isSafe(line)) {
-    true
-} else {
-    line.indices.map { i ->
-        line.subList(0, i) + line.subList(i + 1, line.size)
-    }.any { isSafe(it) }
-}
+private fun isSafeWithElementRemoved(line: List<Int>) =
+    if (isSafe(line)) {
+      true
+    } else {
+      line.indices
+          .map { i -> line.subList(0, i) + line.subList(i + 1, line.size) }
+          .any { isSafe(it) }
+    }

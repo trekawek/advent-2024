@@ -4,9 +4,13 @@ import kotlin.math.absoluteValue
 import kotlin.text.toInt
 
 fun main() {
-    println(
-        generateSequence(::readlnOrNull).toList().map(::parseLine).unzip().run { first.sorted().zip(second.sorted()) }
-            .sumOf { (it.first - it.second).absoluteValue })
+  println(
+      generateSequence(::readlnOrNull)
+          .toList()
+          .map(::parseLine)
+          .unzip()
+          .run { first.sorted().zip(second.sorted()) }
+          .sumOf { (it.first - it.second).absoluteValue })
 }
 
 internal fun parseLine(line: String) =
