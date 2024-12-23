@@ -1,6 +1,13 @@
 package day23
 
 fun main() {
+    val nodes = readGraph()
+    println(nodes.values.flatMap { node ->
+        findCycles(node, 3)
+    }.map { it.toSet() }.distinct().filter { it.any { n -> n.name.startsWith('t') } }.size)
+}
+
+fun readGraph(): Map<String, Node> {
     val nodes: MutableMap<String, Node> = mutableMapOf()
     for (pair in generateSequence(::readlnOrNull).map { it.split('-') }) {
         for (name in pair) {
@@ -18,9 +25,7 @@ fun main() {
             }
         }
     }
-    println(nodes.values.flatMap { node ->
-        findCycles(node, 3)
-    }.map { it.toSet() }.distinct().filter { it.any { n -> n.name.startsWith('t') } }.size)
+    return nodes
 }
 
 fun findCycles(start: Node, cycleSize: Int, n: Node = start, visited: List<Node> = listOf()): List<List<Node>> {
