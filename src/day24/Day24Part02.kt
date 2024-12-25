@@ -28,9 +28,15 @@ fun main() {
           }
 
   val swapped = mutableListOf<String>()
-  for (i in (0..<INPUT_SIZE)) {
+  for (i in (0..INPUT_SIZE)) {
     val broken = gates[String.format("z%02d", i)]!!
-    val blueprint = mainNode(i)
+    val blueprint =
+        if (i == INPUT_SIZE) {
+          carryNode(i - 1)
+        } else {
+          mainNode(i)
+        }
+
     if (broken.equiv(blueprint)) {
       println("Gates are OK for $i")
       continue
@@ -56,14 +62,14 @@ private fun fix(gates: Map<String, GateNode>, broken: Node, blueprint: Node): Li
       return listOf(broken.name!!, n.name!!)
     }
   }
-  if (broken.input1.equiv(blueprint.input1)) {
-    return fix(gates, broken.input2, blueprint.input2)
+  return if (broken.input1.equiv(blueprint.input1)) {
+    fix(gates, broken.input2, blueprint.input2)
   } else if (broken.input1.equiv(blueprint.input2)) {
-    return fix(gates, broken.input2, blueprint.input1)
+    fix(gates, broken.input2, blueprint.input1)
   } else if (broken.input2.equiv(blueprint.input1)) {
-    return fix(gates, broken.input1, blueprint.input2)
+    fix(gates, broken.input1, blueprint.input2)
   } else if (broken.input2.equiv(blueprint.input2)) {
-    return fix(gates, broken.input1, blueprint.input1)
+    fix(gates, broken.input1, blueprint.input1)
   } else {
     throw IllegalArgumentException("Can't fix node ${broken.name}")
   }
