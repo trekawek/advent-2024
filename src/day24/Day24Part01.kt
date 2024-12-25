@@ -13,7 +13,7 @@ fun main() {
           .toLong(2))
 }
 
-fun readInput(): Pair<Map<String, Boolean>, Map<String, Gate>> {
+private fun readInput(): Pair<Map<String, Boolean>, Map<String, Gate>> {
   val input =
       generateSequence(::readlnOrNull)
           .takeWhile(String::isNotEmpty)
@@ -30,7 +30,10 @@ fun readInput(): Pair<Map<String, Boolean>, Map<String, Gate>> {
   return Pair(input, gates)
 }
 
-fun getEvalFunction(input: Map<String, Boolean>, gates: Map<String, Gate>): (String) -> Boolean {
+private fun getEvalFunction(
+    input: Map<String, Boolean>,
+    gates: Map<String, Gate>
+): (String) -> Boolean {
   val cache: MutableMap<String, Boolean> = mutableMapOf()
   fun getValue(o: String): Boolean {
     return cache[o]
@@ -42,9 +45,9 @@ fun getEvalFunction(input: Map<String, Boolean>, gates: Map<String, Gate>): (Str
   return ::getValue
 }
 
-data class Gate(val i1: String, val i2: String, val gateType: GateType, val o: String)
+private data class Gate(val i1: String, val i2: String, val gateType: GateType, val o: String)
 
-enum class GateType {
+private enum class GateType {
   AND {
     override fun eval(i1: Boolean, i2: Boolean): Boolean {
       return i1 && i2

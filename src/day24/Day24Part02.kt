@@ -1,155 +1,177 @@
 package day24
 
-import kotlin.random.Random
-
 const val INPUT_SIZE = 45
 
+// qff <-> qnw
+
+val swap = listOf("qff" to "qnw")
+
 fun main() {
-  val (_, gates) = readInput()
-  val validatedGates = mutableSetOf<String>()
-  val swapList = mutableListOf<Pair<String, String>>()
-  for (i in (1..INPUT_SIZE)) {
-    while (true) {
-      val (result, usedGates) = validateAddition(i, gates, swapList)
-      if (result) {
-        validatedGates += usedGates
-        println("Validated $i bits")
-        break
-      }
-      val candidates = usedGates - validatedGates
-      println("Found error for $i bits. Candidate gates: $candidates")
-      val fixedPairs = fixGates(i, candidates, validatedGates, swapList, gates)
-      if (fixedPairs.isEmpty()) {
-        println("Can't find fixed pairs for $candidates")
-        return
-      }
-      println("Fixed pairs $fixedPairs")
-      swapList += fixedPairs
-    }
-  }
-}
-
-fun fixGates(
-    bits: Int,
-    candidates: Set<String>,
-    validatedGates: Set<String>,
-    swapList: List<Pair<String, String>>,
-    gates: Map<String, Gate>
-): List<Pair<String, String>> {
-  for (c in candidates) {
-    for (d in gates.keys - validatedGates) {
-      if (validateAddition(bits, gates, swapList + Pair(c, d)).first) {
-        println(listOf(Pair(c, d)))
-      }
-    }
-  }
-  return listOf()
-}
-
-fun validateAddition(
-    bits: Int,
-    gates: Map<String, Gate>,
-    swap: List<Pair<String, String>>,
-): Pair<Boolean, Set<String>> {
-  val allUsedGates = mutableSetOf<String>()
-  for (i in (1..10000)) {
-    val x = Random.nextLong(1L shl INPUT_SIZE)
-    val y = Random.nextLong(1L shl INPUT_SIZE)
-    val (z, usedGates) = eval(x, y, bits, gates, swap)
-    val sum = (x + y).mod(1L shl bits)
-    if (sum != z) {
-      return Pair(false, usedGates)
-    }
-    allUsedGates += usedGates
-  }
-  return Pair(true, allUsedGates)
-}
-
-fun eval(
-    x: Long,
-    y: Long,
-    bits: Int,
-    gates: Map<String, Gate>,
-    swap: List<Pair<String, String>>,
-): Pair<Long, Set<String>> {
-  val input =
-      (0..<INPUT_SIZE)
-          .flatMap { i ->
-            listOf(
-                String.format("x%02d", i) to ((x and (1L shl i)) != 0L),
-                String.format("y%02d", i) to ((y and (1L shl i)) != 0L),
-            )
+  generateSequence(::readlnOrNull).takeWhile(String::isNotEmpty).toList()
+  val gates =
+      generateSequence(::readlnOrNull)
+          .map {
+            val match = Regex("([a-z0-9]+) ([A-Z]+) ([a-z0-9]+) -> ([a-z0-9]+)").matchEntire(it)!!
+            val groupValues = match.groupValues
+            GateNode(
+                groupValues[4],
+                groupValues[2],
+                InputNode(groupValues[1]),
+                InputNode(groupValues[3]))
           }
-          .toMap()
-
-  val cache: MutableMap<String, Boolean> = mutableMapOf()
-  return (0..<bits)
-      .map { i ->
-        val (v, usedGates) = eval(String.format("z%02d", i), input, gates, swap, cache)
-        Pair(if (v) 1L shl (i) else 0L, usedGates)
-      }
-      .reduce { acc, p -> Pair(acc.first + p.first, acc.second + p.second) }
-}
-
-fun eval(
-    name: String,
-    input: Map<String, Boolean>,
-    gates: Map<String, Gate>,
-    swap: List<Pair<String, String>>,
-    cache: MutableMap<String, Boolean> = mutableMapOf(),
-    usedGates: Set<String> = setOf()
-): Pair<Boolean, Set<String>> {
-  (input[name] ?: cache[name])?.let {
-    return Pair(it, usedGates)
-  }
-  val swappedName =
-      swap.find { it.first == name }?.second ?: swap.find { it.second == name }?.first ?: name
-  if (usedGates.contains(swappedName)) {
-    return Pair(false, usedGates)
-  }
-  val gate = gates[swappedName]!!
-  val (v1, usedGates1) = eval(gate.i1, input, gates, swap, cache, usedGates + swappedName)
-  val (v2, usedGates2) = eval(gate.i2, input, gates, swap, cache, usedGates + swappedName)
-  val v = gate.gateType.eval(v1, v2)
-  cache[swappedName] = v
-  return Pair(v, usedGates1 + usedGates2)
-}
-
-fun generateNPairs(n: Int, to: Int): List<List<Pair<Int, Int>>> {
-  val sequences = (0..<n).map { generatePairs(to) }
-  return sequence {
-        val iterators = sequences.map { it.iterator() }.toMutableList()
-        val values = iterators.map { it.next() }.toMutableList()
-        do {
-          var progress = false
-          for (i in iterators.indices.reversed()) {
-            if (iterators[i].hasNext()) {
-              values[i] = iterators[i].next()
-              for (j in ((i + 1)..<(iterators.size - 1))) {
-                iterators[j] = sequences[j].iterator()
-              }
-              yield(values.map { it })
-              progress = true
-              break
+          .associateBy { it.name!! }
+          .also { gates ->
+            for (n in gates.values) {
+              n.input1 = gates[n.input1.name()] ?: n.input1
+              n.input2 = gates[n.input2.name()] ?: n.input2
             }
           }
-        } while (progress)
-      }
-      .filter {
-        it.map { pair -> pair.first }.zipWithNext().all { pair -> pair.first < pair.second }
-      }
-      .toList()
-      .distinct()
+
+  val swapped = mutableListOf<String>()
+  for (i in (0..<INPUT_SIZE)) {
+    val broken = gates[String.format("z%02d", i)]!!
+    val blueprint = mainNode(i)
+    if (broken.equiv(blueprint)) {
+      println("Gates are OK for $i")
+      continue
+    }
+    swapped += fix(gates, broken, blueprint)
+  }
+  println(swapped.sorted().joinToString(","))
 }
 
-fun generatePairs(to: Int, from: Int = 0): Sequence<Pair<Int, Int>> {
-  return generateSequence(Pair(from, from + 1)) { prev ->
-    if (prev.second < to - 1) {
-      Pair(prev.first, prev.second + 1)
-    } else if (prev.first < to - 2) {
-      Pair(prev.first + 1, prev.first + 2)
-    } else {
-      null
+private fun fix(gates: Map<String, GateNode>, broken: Node, blueprint: Node): List<String> {
+  if (broken !is GateNode) {
+    throw IllegalArgumentException("Broken node ${broken.name()} is not GateNode")
+  }
+  if (blueprint !is GateNode) {
+    throw IllegalArgumentException("Blueprint node ${blueprint.name()} is not GateNode")
+  }
+  if (blueprint.equiv(broken)) {
+    return listOf()
+  }
+  for (n in gates.values) {
+    if (blueprint.equiv(n)) {
+      swapNodes(gates, broken.name!!, n.name!!)
+      return listOf(broken.name!!, n.name!!)
     }
   }
+  if (broken.input1.equiv(blueprint.input1)) {
+    return fix(gates, broken.input2, blueprint.input2)
+  } else if (broken.input1.equiv(blueprint.input2)) {
+    return fix(gates, broken.input2, blueprint.input1)
+  } else if (broken.input2.equiv(blueprint.input1)) {
+    return fix(gates, broken.input1, blueprint.input2)
+  } else if (broken.input2.equiv(blueprint.input2)) {
+    return fix(gates, broken.input1, blueprint.input1)
+  } else {
+    throw IllegalArgumentException("Can't fix node ${broken.name}")
+  }
+}
+
+private fun swapNodes(gates: Map<String, GateNode>, name1: String, name2: String) {
+  println("Swapping nodes $name1 <-> $name2")
+  val gate1 = gates[name1]!!
+  val gate2 = gates[name2]!!
+
+  gate1.name = name2
+  gate2.name = name1
+
+  for (n in gates.values) {
+    if (n.input1 === gate1) {
+      n.input1 = gate2
+    } else if (n.input1 == gate2) {
+      n.input1 = gate1
+    }
+    if (n.input2 === gate1) {
+      n.input2 = gate2
+    } else if (n.input2 == gate2) {
+      n.input2 = gate1
+    }
+  }
+}
+
+private fun mainNode(i: Int): GateNode {
+  val input1 = InputNode(String.format("x%02d", i))
+  val input2 = InputNode(String.format("y%02d", i))
+  val inputXor = GateNode(null, "XOR", input1, input2)
+  return if (i > 0) {
+    GateNode(null, "XOR", inputXor, carryNode(i - 1))
+  } else {
+    inputXor
+  }
+}
+
+private fun carryNode(i: Int): GateNode {
+  val input1 = InputNode(String.format("x%02d", i))
+  val input2 = InputNode(String.format("y%02d", i))
+  val inputAnd = GateNode(null, "AND", input1, input2)
+  return if (i > 0) {
+    val mainNode = mainNode(i)
+    GateNode(null, "OR", GateNode(null, "AND", mainNode.input1, mainNode.input2), inputAnd)
+  } else {
+    inputAnd
+  }
+}
+
+private data class GateNode(
+    var name: String?,
+    val op: String,
+    var input1: Node,
+    var input2: Node,
+) : Node {
+  override fun name() = name
+
+  override fun printTree(indent: Int): String {
+    return StringBuilder()
+        .apply {
+          append(" ".repeat(indent))
+          if (name == null) {
+            append("---")
+          } else {
+            append(name)
+          }
+          append(" $op\n")
+          append(input1.printTree(indent + 2))
+          append(input2.printTree(indent + 2))
+        }
+        .toString()
+  }
+
+  override fun equiv(n: Node): Boolean {
+    if (n !is GateNode) {
+      return false
+    }
+    if (n.op != op) {
+      return false
+    }
+    return (n.input1.equiv(input1) && n.input2.equiv(input2)) ||
+        (n.input1.equiv(input2) && n.input2.equiv(input1))
+  }
+}
+
+private data class InputNode(val name: String) : Node {
+  override fun name() = name
+
+  override fun printTree(indent: Int): String {
+    return StringBuilder()
+        .apply {
+          append(" ".repeat(indent))
+          append(name)
+          append("\n")
+        }
+        .toString()
+  }
+
+  override fun equiv(n: Node): Boolean {
+    return this == n
+  }
+}
+
+private interface Node {
+  fun name(): String?
+
+  fun printTree(indent: Int = 0): String
+
+  fun equiv(n: Node): Boolean
 }
